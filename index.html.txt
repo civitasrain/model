@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>3D Massing on Google Earth</title>
+    <style>
+      html, body, #map {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+      }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?AIzaSyCcOfuvpCwHZLKH0poMDbMljLZH5-BE0f0&libraries=maps"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/loaders/GLTFLoader.js"></script>
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <script type="module">
+      const map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 49.2827, lng: -123.1207 }, // Change to your site coordinates
+        zoom: 18,
+        heading: 0,
+        tilt: 67.5,
+        mapId: "3d-map",
+      });
+
+      const webGLOverlayView = new google.maps.WebGLOverlayView();
+
+      webGLOverlayView.onAdd = () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera();
+        const renderer = new THREE.WebGLRenderer({ alpha: true });
+        renderer.autoClear = false;
+
+        const loader = new THREE.GLTFLoader();
+        loader.load(
+          'model.glb', // upload your model.glb to the same folder
+          function (gltf) {
+            gltf.scene.scale.set(1, 1, 1); // scale if needed
+            scene.add(gltf.scene);
+          }
+        );
+
+        webGLOverlayView.onDraw = ({ gl, transformer }) => {
+          const latLngAltitude = {
+            lat: 49.2827, // your building site latitude
+            lng: -123.1207, // your building site longitude
+            altitude: 0, // optional vertical offset
+          };
+
+          const matrix = transformer.fromLatLngAltitude(latLngAltitude);
+          camera.projectionMatrix = new THREE.Matrix4().fromArray(matrix);
+          renderer.setSize(gl.canvas.width, gl.canvas.height);
+          renderer.render(scene, camera);
+          renderer.resetState();
+        };
+      };
+
+      webGLOverlayView.setMap(map);
+    </script>
+  </body>
+</html>
